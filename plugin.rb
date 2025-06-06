@@ -16,15 +16,26 @@ register_svg_icon "fab-telegram"
 # Расширенная CSP конфигурация для Telegram виджета
 extend_content_security_policy(
   script_src: [
-    'https://telegram.org/js/telegram-widget.js',
     'https://telegram.org',
+    'https://telegram.org/js/telegram-widget.js',
+    "'unsafe-inline'",
+    "'unsafe-eval'"
+  ],
+  script_src_elem: [
+    'https://telegram.org',
+    'https://telegram.org/js/',
     "'unsafe-inline'"
   ],
   connect_src: [
     'https://telegram.org',
-    'https://*.telegram.org'
+    'https://*.telegram.org',
+    'https://oauth.telegram.org'
   ],
   frame_src: [
+    'https://oauth.telegram.org',
+    'https://telegram.org'
+  ],
+  child_src: [
     'https://oauth.telegram.org',
     'https://telegram.org'
   ]
