@@ -2,9 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.1
+# version: 1.1.3
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
+# Fixed: Content Security Policy issues and Telegram widget loading
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -12,7 +13,22 @@ enabled_site_setting :telegram_auth_enabled
 
 register_svg_icon "fab-telegram"
 
-extend_content_security_policy script_src: ['https://telegram.org/js/telegram-widget.js']
+# Расширенная CSP конфигурация для Telegram виджета
+extend_content_security_policy(
+  script_src: [
+    'https://telegram.org/js/telegram-widget.js',
+    'https://telegram.org',
+    "'unsafe-inline'"
+  ],
+  connect_src: [
+    'https://telegram.org',
+    'https://*.telegram.org'
+  ],
+  frame_src: [
+    'https://oauth.telegram.org',
+    'https://telegram.org'
+  ]
+)
 
 require_dependency 'omniauth/telegram'
 
@@ -86,11 +102,22 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
       ""
     end
   end
-
   # Добавляем метод для получения иконки провайдера
   def icon
     "fab-telegram"
   end
+
+  # Переопределяем connect_path для предотвращения генерации reconnect=true
+  def connect_path(options = {})
+    # Всегда возвращаем путь без reconnect параметра
+    "/auth/telegram"
+  end
+
+  # Переопределяем revoke_path для корректной работы отключения
+  def revoke_path
+    "/auth/telegram/revoke"
+  end
+
   # Переопределяем метод для правильной обработки данных Telegram
   def after_authenticate(auth_token, existing_account = nil)
     # Дополнительная валидация данных от Telegram для предотвращения signature mismatch
@@ -239,28 +266,94 @@ auth_provider authenticator: ::TelegramAuthenticator.new,
 
 # Добавляем обработчик для reconnect параметра
 after_initialize do
-  # Добавляем роут для обработки reconnect параметра
+  # Добавляем роуты для обработки Telegram OAuth
   Discourse::Application.routes.append do
-    get '/auth/telegram' => 'users/omniauth_callbacks#telegram_reconnect', constraints: lambda { |req|
-      req.params['reconnect'] == 'true'
-    }
+    # Основной роут для Telegram auth - показывает виджет
+    get '/auth/telegram' => 'telegram_auth#show'
+    
+    # Роут для callback от Telegram
+    get '/auth/telegram/callback' => 'users/omniauth_callbacks#telegram'
+    
+    # Роут для отключения аккаунта
+    delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'
   end
   
-  # Модифицируем существующий контроллер для обработки reconnect
+  # Создаем контроллер для показа Telegram виджета
+  class ::TelegramAuthController < ::ApplicationController
+    skip_before_action :verify_authenticity_token
+    
+    def show
+      # Проверяем настройки
+      unless SiteSetting.telegram_auth_enabled
+        return redirect_to '/', alert: 'Telegram authentication is disabled'
+      end
+      
+      unless SiteSetting.telegram_auth_bot_name.present?
+        return redirect_to '/', alert: 'Telegram bot is not configured'
+      end
+      
+      # Логируем для отладки
+      Rails.logger.info("TelegramAuth: Showing auth page") if SiteSetting.telegram_auth_debug
+      
+      # Очищаем reconnect параметр если есть
+      if params[:reconnect] == 'true'
+        Rails.logger.info("TelegramAuth: Removing reconnect parameter") if SiteSetting.telegram_auth_debug
+        redirect_to '/auth/telegram' and return
+      end
+      
+      render 'omniauth_callbacks/telegram', layout: false
+    end
+  end
+  
+  # Модифицируем существующий контроллер для обработки callbacks
   require_dependency 'users/omniauth_callbacks_controller'
   
   Users::OmniauthCallbacksController.class_eval do
-    def telegram_reconnect
-      Rails.logger.info("TelegramAuth: Handling reconnect request") if SiteSetting.telegram_auth_debug
+    def telegram
+      Rails.logger.info("TelegramAuth: Processing Telegram callback") if SiteSetting.telegram_auth_debug
       
-      # Проверяем, что пользователь аутентифицирован
-      unless current_user
-        Rails.logger.warn("TelegramAuth: Reconnect attempted without authenticated user")
-        return redirect_to '/login'
+      # Стандартная обработка OmniAuth callback
+      authenticator = ::TelegramAuthenticator.new
+      auth_result = authenticator.after_authenticate(request.env["omniauth.auth"], existing_account: current_user)
+      
+      if auth_result.failed?
+        Rails.logger.error("TelegramAuth: Authentication failed - #{auth_result.failed_reason}")
+        return redirect_to '/', alert: 'Telegram authentication failed'
       end
       
-      # Перенаправляем на стандартный auth endpoint без reconnect параметра
-      redirect_to '/auth/telegram'
+      if auth_result.user
+        log_on_user(auth_result.user)
+        Rails.logger.info("TelegramAuth: User successfully authenticated") if SiteSetting.telegram_auth_debug
+        redirect_to '/', notice: 'Successfully connected to Telegram'
+      else
+        Rails.logger.error("TelegramAuth: No user in auth result")
+        redirect_to '/', alert: 'Authentication error'
+      end
+    end
+    
+    def telegram_revoke
+      Rails.logger.info("TelegramAuth: Handling revoke request") if SiteSetting.telegram_auth_debug
+      
+      unless current_user
+        Rails.logger.warn("TelegramAuth: Revoke attempted without authenticated user")
+        return render json: { error: "Not authenticated" }, status: 401
+      end
+      
+      begin
+        # Находим и удаляем связанный аккаунт Telegram
+        account = current_user.user_associated_accounts.find_by(provider_name: 'telegram')
+        if account
+          account.destroy!
+          Rails.logger.info("TelegramAuth: Successfully revoked Telegram account for user #{current_user.id}")
+          render json: { success: true }
+        else
+          Rails.logger.warn("TelegramAuth: No Telegram account found for user #{current_user.id}")
+          render json: { error: "No Telegram account found" }, status: 404
+        end
+      rescue => e
+        Rails.logger.error("TelegramAuth: Error revoking Telegram account: #{e.message}")
+        render json: { error: "Failed to revoke account" }, status: 500
+      end
     end
   end
 end

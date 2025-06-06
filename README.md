@@ -2,15 +2,20 @@
 
 This plugin adds support for logging in via Telegram to your Discourse forum.
 
-## Version 1.1.1 - Enhanced Stability
+## Version 1.1.2 - Complete Fix for Reconnect Issues 🎉
 
 **🚀 Latest Improvements:**
 
-- **Fixed hanging authentication pages** - Resolved issues with reconnect parameter
-- **Enhanced diagnostics** - Added comprehensive troubleshooting tools
-- **Improved error handling** - Better debugging and error reporting  
-- **Session security** - Automatic expiration of authentication data after 24 hours
-- **Complete documentation** - Step-by-step guides for common issues
+- **FIXED: Reconnect links issue** - Discourse no longer generates problematic `reconnect=true` links
+- **Enhanced account management** - Improved connect/disconnect functionality on user account pages
+- **Better URL handling** - Clean authentication URLs without hanging parameters
+- **Complete solution** - Addresses both critical loading errors AND link generation issues
+
+**Previous fixes (v1.1.1):**
+- Fixed hanging authentication pages - Resolved issues with reconnect parameter
+- Enhanced diagnostics - Added comprehensive troubleshooting tools
+- Improved error handling - Better debugging and error reporting  
+- Session security - Automatic expiration of authentication data after 24 hours
 
 **🔒 Security Features:**
 - Fixed signature mismatch issues with omniauth-telegram 0.2.1
