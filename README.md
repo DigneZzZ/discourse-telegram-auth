@@ -2,10 +2,11 @@
 
 This plugin adds support for logging in via Telegram to your Discourse forum.
 
-## Version 1.1.6 - Complete & Stable Release 🎉
+## Version 1.1.8 - Complete & Stable Release 🎉
 
 **🚀 All Issues Resolved:**
 
+- **✅ FIXED: Rails 7.2+ compatibility** - Resolved middleware registration issues
 - **✅ FIXED: Page hanging on reconnect links** - No more `reconnect=true` issues
 - **✅ FIXED: Content Security Policy errors** - Telegram widget loads properly with `strict-dynamic`
 - **✅ FIXED: Translation keys display** - Full Russian localization
