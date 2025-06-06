@@ -8,9 +8,21 @@ ru:
         description: "Подключен как @%{username}"
     user:
       associated_accounts:
-        connect:
-          telegram: "Подключить аккаунт Telegram"
-        disconnect:
-          telegram: "Отключить аккаунт Telegram"
-        connected:
-          telegram: "Подключен как @%{username}"
+        connect: "Подключить"
+        disconnect: "Отключить"
+        confirm_description: "Ваш аккаунт %{provider} будет использоваться для аутентификации."
+        connect_other_account: "Подключить"
+        revoke: "Отключить"
+        cancel: "Отменить"
+        not_connected: "Не подключен"
+        confirm_revoke: "Отключить этот аккаунт?"
+        account_specific:
+          telegram:
+            connect: "Подключить аккаунт Telegram"
+            disconnect: "Отключить аккаунт Telegram"
+            connected: "Подключен как @%{username}"
+            revoke: "Отключить Telegram"
+    preferences:
+      account:
+        connect: "Подключить"
+        revoke: "Отключить"

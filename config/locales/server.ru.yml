@@ -6,3 +6,12 @@ ru:
     telegram_auth_enabled: "Включить аутентификацию через Telegram. Требует настройки telegram_auth_bot_name и telegram_auth_bot_token."
     telegram_auth_bot_name: "Имя бота для аутентификации через Telegram. Должно заканчиваться на 'Bot' или 'bot'."
     telegram_auth_bot_token: "Токен бота для аутентификации через Telegram. Получите его у @BotFather в Telegram."
+    telegram_auth_debug: "Включить отладочное логирование для Telegram аутентификации."
+  user:
+    associated_accounts:
+      connect: "Подключить"
+      disconnect: "Отключить"
+      connected: "Подключен"
+      revoke: "Отключить"
+      telegram:
+        description: "Подключен как @%{username}"
