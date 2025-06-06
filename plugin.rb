@@ -14,17 +14,12 @@ enabled_site_setting :telegram_auth_enabled
 register_svg_icon "fab-telegram"
 
 # Расширенная CSP конфигурация для Telegram виджета
+# Используем nonce вместо unsafe-inline для соответствия strict-dynamic
 extend_content_security_policy(
   script_src: [
     'https://telegram.org',
     'https://telegram.org/js/telegram-widget.js',
-    "'unsafe-inline'",
-    "'unsafe-eval'"
-  ],
-  script_src_elem: [
-    'https://telegram.org',
-    'https://telegram.org/js/',
-    "'unsafe-inline'"
+    # unsafe-inline заменяем на nonce в контроллере
   ],
   connect_src: [
     'https://telegram.org',
@@ -328,13 +323,15 @@ after_initialize do
     # Роут для отключения аккаунта
     delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'
   end
-    # Создаем контроллер для показа Telegram виджета
-  class ::TelegramAuthController < ::ApplicationController
+    # Создаем контроллер для показа Telegram виджета  class ::TelegramAuthController < ::ApplicationController
     skip_before_action :verify_authenticity_token
     
     def show
-      # Устанавливаем разрешающую CSP для Telegram страницы
-      response.headers['Content-Security-Policy'] = "script-src 'unsafe-inline' 'unsafe-eval' https://telegram.org https://*.telegram.org; frame-src https://oauth.telegram.org https://telegram.org; connect-src 'self' https://telegram.org https://*.telegram.org;"
+      # Генерируем случайный nonce для use strict-dynamic вместо unsafe-inline
+      @csp_nonce = SecureRandom.base64(16)
+      
+      # Устанавливаем разрешающую CSP для Telegram страницы С NONCE
+      response.headers['Content-Security-Policy'] = "script-src 'nonce-#{@csp_nonce}' 'strict-dynamic' https://telegram.org https://*.telegram.org; frame-src https://oauth.telegram.org https://telegram.org; connect-src 'self' https://telegram.org https://*.telegram.org;"
       
       # Проверяем настройки
       unless SiteSetting.telegram_auth_enabled
@@ -346,7 +343,7 @@ after_initialize do
       end
       
       # Логируем для отладки
-      Rails.logger.info("TelegramAuth: Showing auth page") if SiteSetting.telegram_auth_debug
+      Rails.logger.info("TelegramAuth: Showing auth page with CSP nonce") if SiteSetting.telegram_auth_debug
       
       # Очищаем reconnect параметр если есть
       if params[:reconnect] == 'true'
@@ -354,6 +351,7 @@ after_initialize do
         redirect_to '/auth/telegram' and return
       end
       
+      # Передаем nonce в шаблон
       render 'omniauth_callbacks/telegram', layout: false
     end
   end
