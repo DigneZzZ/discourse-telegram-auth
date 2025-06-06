@@ -245,20 +245,22 @@ after_initialize do
       req.params['reconnect'] == 'true'
     }
   end
-end
-
-# Контроллер для обработки reconnect
-class Users::OmniauthCallbacksController
-  def telegram_reconnect
-    Rails.logger.info("TelegramAuth: Handling reconnect request") if SiteSetting.telegram_auth_debug
-    
-    # Проверяем, что пользователь аутентифицирован
-    unless current_user
-      Rails.logger.warn("TelegramAuth: Reconnect attempted without authenticated user")
-      return redirect_to '/login'
+  
+  # Модифицируем существующий контроллер для обработки reconnect
+  require_dependency 'users/omniauth_callbacks_controller'
+  
+  Users::OmniauthCallbacksController.class_eval do
+    def telegram_reconnect
+      Rails.logger.info("TelegramAuth: Handling reconnect request") if SiteSetting.telegram_auth_debug
+      
+      # Проверяем, что пользователь аутентифицирован
+      unless current_user
+        Rails.logger.warn("TelegramAuth: Reconnect attempted without authenticated user")
+        return redirect_to '/login'
+      end
+      
+      # Перенаправляем на стандартный auth endpoint без reconnect параметра
+      redirect_to '/auth/telegram'
     end
-    
-    # Перенаправляем на стандартный auth endpoint без reconnect параметра
-    redirect_to '/auth/telegram'
   end
 end
