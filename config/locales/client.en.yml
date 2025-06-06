@@ -5,3 +5,12 @@ en:
         name: "Telegram"
         title: "Log in with Telegram"
         sr_title: "Log in with Telegram"
+        description: "Connected as @%{username}"
+    user:
+      associated_accounts:
+        connect:
+          telegram: "Connect your Telegram account"
+        disconnect:
+          telegram: "Disconnect your Telegram account"
+        connected:
+          telegram: "Connected as @%{username}"

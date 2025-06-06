@@ -1,0 +1,16 @@
+ru:
+  js:
+    login:
+      telegram:
+        name: "Telegram"
+        title: "Войти через Telegram"
+        sr_title: "Войти через Telegram"
+        description: "Подключен как @%{username}"
+    user:
+      associated_accounts:
+        connect:
+          telegram: "Подключить аккаунт Telegram"
+        disconnect:
+          telegram: "Отключить аккаунт Telegram"
+        connected:
+          telegram: "Подключен как @%{username}"

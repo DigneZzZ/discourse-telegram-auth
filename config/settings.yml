@@ -1,9 +1,13 @@
 plugins:
   telegram_auth_enabled:
     default: false
+    client: true
   telegram_auth_bot_name:
     default: ''
-    regex: ".+[Bb]ot"
+    regex: "^[a-zA-Z][a-zA-Z0-9_]{3,}[Bb]ot$"
+    min: 5
+    max: 64
   telegram_auth_bot_token:
     default: ''
-    regex: "^[0-9]{10}:[a-zA-Z0-9_-]{35}$"
+    regex: "^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$"
+    secret: true

@@ -5,3 +5,8 @@ files:
   destination_path: client.yml
 - source_path: config/locales/server.en.yml
   destination_path: server.yml
+
+# Additional supported locales
+supported_locales:
+  - en
+  - ru
