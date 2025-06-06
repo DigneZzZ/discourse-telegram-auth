@@ -2,10 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.3
+# version: 1.1.4
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
-# Fixed: Content Security Policy issues and Telegram widget loading
+# Fixed: Content Security Policy issues, Telegram widget loading, and Russian translations
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -100,8 +100,29 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
     rescue => e
       Rails.logger.warn("TelegramAuthenticator: Error getting description for user #{user.id}: #{e.message}")
       ""
-    end
+    end  end
+  
+  # Добавляем переводы для кнопок подключения
+  def self.register_translations
+    # Регистрируем переводы для кнопок
+    return unless defined?(I18n)
+    
+    # Добавляем переводы напрямую
+    I18n.backend.store_translations(:ru, {
+      js: {
+        user: {
+          associated_accounts: {
+            connect: "Подключить",
+            disconnect: "Отключить", 
+            revoke: "Отключить"
+          }
+        }
+      }
+    })
+    
+    Rails.logger.info("TelegramAuth: Translations registered") if SiteSetting.telegram_auth_debug rescue nil
   end
+  
   # Добавляем метод для получения иконки провайдера
   def icon
     "fab-telegram"
@@ -266,6 +287,9 @@ auth_provider authenticator: ::TelegramAuthenticator.new,
 
 # Добавляем обработчик для reconnect параметра
 after_initialize do
+  # Регистрируем переводы для русского интерфейса
+  ::TelegramAuthenticator.register_translations
+  
   # Добавляем роуты для обработки Telegram OAuth
   Discourse::Application.routes.append do
     # Основной роут для Telegram auth - показывает виджет
