@@ -2,7 +2,7 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.0
+# version: 1.1.1
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
 
@@ -14,7 +14,7 @@ register_svg_icon "fab-telegram"
 
 extend_content_security_policy script_src: ['https://telegram.org/js/telegram-widget.js']
 
-require "omniauth/telegram"
+require_dependency 'omniauth/telegram'
 
 class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
   def name
@@ -31,13 +31,29 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
 
   def can_connect_existing_user?
     true
-  end
-  def register_middleware(omniauth)
+  end  def register_middleware(omniauth)
     omniauth.provider :telegram,
            setup: lambda { |env|
              strategy = env["omniauth.strategy"]
+             
+             # Логируем для отладки
+             Rails.logger.info("TelegramAuth: Setting up strategy") if SiteSetting.telegram_auth_debug
+             
              strategy.options[:bot_name] = SiteSetting.telegram_auth_bot_name
              strategy.options[:bot_secret] = SiteSetting.telegram_auth_bot_token
+             
+             # Проверяем настройки
+             if SiteSetting.telegram_auth_bot_name.blank?
+               Rails.logger.error("TelegramAuth: Bot name is not configured")
+               raise "Telegram bot name is required"
+             end
+             
+             if SiteSetting.telegram_auth_bot_token.blank?
+               Rails.logger.error("TelegramAuth: Bot token is not configured")
+               raise "Telegram bot token is required"
+             end
+             
+             Rails.logger.info("TelegramAuth: Bot name: #{SiteSetting.telegram_auth_bot_name}") if SiteSetting.telegram_auth_debug
              
              # Добавляем дополнительные опции для улучшенной безопасности
              strategy.options[:button_config] = {
@@ -46,6 +62,10 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
                'request-access' => 'write'
              }
            }
+  rescue => e
+    Rails.logger.error("TelegramAuth: Error in register_middleware: #{e.message}")
+    Rails.logger.error("TelegramAuth: Backtrace: #{e.backtrace.join("\n")}")
+    raise e
   end
 
   # Исправленная сигнатура метода description_for_user
@@ -178,7 +198,66 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
     }
   end
 
+  # Добавляем метод для диагностики проблем с аутентификацией
+  def self.diagnose_setup
+    Rails.logger.info("=== TelegramAuth Diagnostics ===")
+    
+    # Проверяем настройки
+    enabled = SiteSetting.telegram_auth_enabled
+    bot_name = SiteSetting.telegram_auth_bot_name
+    bot_token = SiteSetting.telegram_auth_bot_token
+    
+    Rails.logger.info("Plugin enabled: #{enabled}")
+    Rails.logger.info("Bot name configured: #{bot_name.present?}")
+    Rails.logger.info("Bot token configured: #{bot_token.present?}")
+    
+    if bot_name.present?
+      Rails.logger.info("Bot name: #{bot_name}")
+      Rails.logger.info("Bot name valid format: #{bot_name.match?(/^[a-zA-Z][a-zA-Z0-9_]{3,}[Bb]ot$/)}")
+    end
+    
+    if bot_token.present?
+      Rails.logger.info("Bot token format valid: #{bot_token.match?(/^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$/)}")
+    end
+    
+    # Проверяем зависимости
+    begin
+      require 'omniauth/telegram'
+      Rails.logger.info("OmniAuth Telegram gem: Available")
+    rescue LoadError => e
+      Rails.logger.error("OmniAuth Telegram gem: NOT AVAILABLE - #{e.message}")
+    end
+    
+    Rails.logger.info("=== End Diagnostics ===")
+  end
+
 end
 
 auth_provider authenticator: ::TelegramAuthenticator.new,
               icon: "fab-telegram"
+
+# Добавляем обработчик для reconnect параметра
+after_initialize do
+  # Добавляем роут для обработки reconnect параметра
+  Discourse::Application.routes.append do
+    get '/auth/telegram' => 'users/omniauth_callbacks#telegram_reconnect', constraints: lambda { |req|
+      req.params['reconnect'] == 'true'
+    }
+  end
+end
+
+# Контроллер для обработки reconnect
+class Users::OmniauthCallbacksController
+  def telegram_reconnect
+    Rails.logger.info("TelegramAuth: Handling reconnect request") if SiteSetting.telegram_auth_debug
+    
+    # Проверяем, что пользователь аутентифицирован
+    unless current_user
+      Rails.logger.warn("TelegramAuth: Reconnect attempted without authenticated user")
+      return redirect_to '/login'
+    end
+    
+    # Перенаправляем на стандартный auth endpoint без reconnect параметра
+    redirect_to '/auth/telegram'
+  end
+end
