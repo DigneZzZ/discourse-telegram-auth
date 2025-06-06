@@ -2,10 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.6
+# version: 1.1.7
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
-# Fixed: Content Security Policy strict-dynamic compatibility issues and syntax errors
+# Fixed: Content Security Policy strict-dynamic compatibility issues and all syntax errors
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -90,8 +90,8 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
     Rails.logger.error("TelegramAuth: Backtrace: #{e.backtrace.join("\n")}")
     raise e
   end
-
-  # Исправленная сигнатура метода description_for_user  def description_for_user(user)
+  # Исправленная сигнатура метода description_for_user
+  def description_for_user(user)
     return "" unless user.present?
     
     begin
@@ -321,7 +321,8 @@ after_initialize do
     get '/auth/telegram/callback' => 'users/omniauth_callbacks#telegram'
     
     # Роут для отключения аккаунта
-    delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'  end
+    delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'  
+  end
   
   # Создаем контроллер для показа Telegram виджета
   class ::TelegramAuthController < ::ApplicationController
