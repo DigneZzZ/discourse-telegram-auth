@@ -2,25 +2,22 @@
 
 This plugin adds support for logging in via Telegram to your Discourse forum.
 
-## Version 1.1.2 - Complete Fix for Reconnect Issues 🎉
+## Version 1.1.4 - Complete & Stable Release 🎉
 
-**🚀 Latest Improvements:**
+**🚀 All Issues Resolved:**
 
-- **FIXED: Reconnect links issue** - Discourse no longer generates problematic `reconnect=true` links
-- **Enhanced account management** - Improved connect/disconnect functionality on user account pages
-- **Better URL handling** - Clean authentication URLs without hanging parameters
-- **Complete solution** - Addresses both critical loading errors AND link generation issues
+- **✅ FIXED: Page hanging on reconnect links** - No more `reconnect=true` issues
+- **✅ FIXED: Content Security Policy errors** - Telegram widget loads properly  
+- **✅ FIXED: Translation keys display** - Full Russian localization
+- **✅ FIXED: Critical loading errors** - Stable plugin initialization
+- **✅ ENHANCED: Security & diagnostics** - Comprehensive error handling
 
-**Previous fixes (v1.1.1):**
-- Fixed hanging authentication pages - Resolved issues with reconnect parameter
-- Enhanced diagnostics - Added comprehensive troubleshooting tools
-- Improved error handling - Better debugging and error reporting  
-- Session security - Automatic expiration of authentication data after 24 hours
-
-**🔒 Security Features:**
-- Fixed signature mismatch issues with omniauth-telegram 0.2.1
-- Enhanced validation with comprehensive signature verification
-- Improved authentication flow with proper error handling
+**🌟 Key Features:**
+- **Seamless Telegram OAuth** - One-click authentication via Telegram
+- **Account linking** - Connect existing Discourse accounts with Telegram
+- **Russian localization** - Full interface translation
+- **Enhanced security** - Proper signature validation and CSRF protection
+- **Debug mode** - Comprehensive logging for troubleshooting
 
 ## Features
 
