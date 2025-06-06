@@ -96,31 +96,66 @@
         
         if (!isConfigured) {
             document.getElementById('telegram-widget-container').innerHTML = 
-                '<div class="error">Telegram bot is not configured. Please contact administrator.</div>';
-        } else {
-            // Загружаем Telegram виджет
-            const script = document.createElement('script');
-            script.async = true;
-            script.src = 'https://telegram.org/js/telegram-widget.js?22';
-            script.setAttribute('data-telegram-login', botName);
-            script.setAttribute('data-size', 'large');
-            script.setAttribute('data-auth-url', window.location.origin + '/auth/telegram/callback');
-            script.setAttribute('data-request-access', 'write');
+                '<div class="error">Telegram bot is not configured. Please contact administrator.</div>';        } else {
+            // Загружаем Telegram виджет с обходом CSP
+            console.log('Loading Telegram widget for bot:', botName);
             
-            script.onload = function() {
-                console.log('Telegram widget loaded successfully');
+            // Создаем контейнер для виджета
+            const widgetContainer = document.createElement('div');
+            widgetContainer.id = 'telegram-login-' + botName;
+            
+            // Создаем iframe для обхода CSP (альтернативный метод)
+            const iframe = document.createElement('iframe');
+            iframe.src = `https://oauth.telegram.org/embed/${botName}?origin=${encodeURIComponent(window.location.origin)}&return_to=${encodeURIComponent(window.location.origin + '/auth/telegram/callback')}&size=large`;
+            iframe.style.border = 'none';
+            iframe.style.width = '100%';
+            iframe.style.height = '50px';
+            iframe.frameBorder = '0';
+            iframe.scrolling = 'no';
+            
+            // Добавляем обработчик загрузки iframe
+            iframe.onload = function() {
+                console.log('Telegram OAuth iframe loaded successfully');
                 document.querySelector('.loading').style.display = 'none';
             };
             
-            script.onerror = function() {
-                console.error('Failed to load Telegram widget');
-                document.getElementById('telegram-widget-container').innerHTML = 
-                    '<div class="error">Failed to load Telegram widget. Please check your internet connection and Content Security Policy settings.</div>';
+            iframe.onerror = function() {
+                console.error('Failed to load Telegram OAuth iframe');
+                // Fallback к обычному скрипту
+                loadTelegramScript();
             };
             
-            // Заменяем loading div на виджет
-            document.getElementById('telegram-widget-container').innerHTML = '';
-            document.getElementById('telegram-widget-container').appendChild(script);
+            // Заменяем loading на iframe
+            const container = document.getElementById('telegram-widget-container');
+            container.innerHTML = '';
+            container.appendChild(iframe);
+            
+            // Функция для загрузки обычного скрипта как fallback
+            function loadTelegramScript() {
+                const script = document.createElement('script');
+                script.async = true;
+                script.src = 'https://telegram.org/js/telegram-widget.js?22';
+                script.setAttribute('data-telegram-login', botName);
+                script.setAttribute('data-size', 'large');
+                script.setAttribute('data-auth-url', window.location.origin + '/auth/telegram/callback');
+                script.setAttribute('data-request-access', 'write');
+                
+                script.onload = function() {
+                    console.log('Telegram widget script loaded successfully');
+                    document.querySelector('.loading').style.display = 'none';
+                };
+                
+                script.onerror = function() {
+                    console.error('Failed to load Telegram widget script');
+                    document.getElementById('telegram-widget-container').innerHTML = 
+                        '<div class="error">Failed to load Telegram widget. Please contact administrator about Content Security Policy configuration.</div>';
+                };
+                
+                // Добавляем скрипт
+                const container = document.getElementById('telegram-widget-container');
+                container.innerHTML = '';
+                container.appendChild(script);
+            }
         }
         
         // Автоматическое перенаправление при наличии reconnect параметра

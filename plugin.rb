@@ -2,10 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.4
+# version: 1.1.5
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
-# Fixed: Content Security Policy issues, Telegram widget loading, and Russian translations
+# Fixed: Content Security Policy strict-dynamic compatibility issues
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -301,6 +301,22 @@ after_initialize do
   # Регистрируем переводы для русского интерфейса
   ::TelegramAuthenticator.register_translations
   
+  # Добавляем middleware для обработки CSP на Telegram страницах
+  Rails.application.config.middleware.insert_before ActionDispatch::ContentSecurityPolicy::Middleware, Class.new do
+    def initialize(app)
+      @app = app
+    end
+    
+    def call(env)
+      if env['PATH_INFO'] == '/auth/telegram' || env['PATH_INFO'].start_with?('/auth/telegram')
+        # Временно отключаем CSP для Telegram страниц
+        env['action_dispatch.content_security_policy'] = nil
+        env['action_dispatch.content_security_policy_report_only'] = nil
+      end
+      @app.call(env)
+    end
+  end
+  
   # Добавляем роуты для обработки Telegram OAuth
   Discourse::Application.routes.append do
     # Основной роут для Telegram auth - показывает виджет
@@ -312,12 +328,14 @@ after_initialize do
     # Роут для отключения аккаунта
     delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'
   end
-  
-  # Создаем контроллер для показа Telegram виджета
+    # Создаем контроллер для показа Telegram виджета
   class ::TelegramAuthController < ::ApplicationController
     skip_before_action :verify_authenticity_token
     
     def show
+      # Устанавливаем разрешающую CSP для Telegram страницы
+      response.headers['Content-Security-Policy'] = "script-src 'unsafe-inline' 'unsafe-eval' https://telegram.org https://*.telegram.org; frame-src https://oauth.telegram.org https://telegram.org; connect-src 'self' https://telegram.org https://*.telegram.org;"
+      
       # Проверяем настройки
       unless SiteSetting.telegram_auth_enabled
         return redirect_to '/', alert: 'Telegram authentication is disabled'
