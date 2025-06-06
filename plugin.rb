@@ -91,8 +91,7 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
     raise e
   end
 
-  # Исправленная сигнатура метода description_for_user
-  def description_for_user(user)
+  # Исправленная сигнатура метода description_for_user  def description_for_user(user)
     return "" unless user.present?
     
     begin
@@ -106,7 +105,8 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
     rescue => e
       Rails.logger.warn("TelegramAuthenticator: Error getting description for user #{user.id}: #{e.message}")
       ""
-    end  end
+    end
+  end
   
   # Добавляем переводы для кнопок подключения
   def self.register_translations
