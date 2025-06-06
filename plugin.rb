@@ -2,10 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.5
+# version: 1.1.6
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
-# Fixed: Content Security Policy strict-dynamic compatibility issues
+# Fixed: Content Security Policy strict-dynamic compatibility issues and syntax errors
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -321,9 +321,10 @@ after_initialize do
     get '/auth/telegram/callback' => 'users/omniauth_callbacks#telegram'
     
     # Роут для отключения аккаунта
-    delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'
-  end
-    # Создаем контроллер для показа Telegram виджета  class ::TelegramAuthController < ::ApplicationController
+    delete '/auth/telegram/revoke' => 'users/omniauth_callbacks#telegram_revoke'  end
+  
+  # Создаем контроллер для показа Telegram виджета
+  class ::TelegramAuthController < ::ApplicationController
     skip_before_action :verify_authenticity_token
     
     def show
