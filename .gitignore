@@ -199,3 +199,15 @@ build-iPhoneSimulator/
 # .rubocop-https?--*
 
 # End of https://www.toptal.com/developers/gitignore/api/ruby,node
+
+# Development and testing files (not needed in production)
+spec/
+.rspec
+.github/
+Gemfile
+Gemfile.lock
+package.json
+.eslintrc
+.template-lintrc.js
+.rubocop.yml
+translator.yml

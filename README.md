@@ -2,13 +2,23 @@
 
 This plugin adds support for logging in via Telegram to your Discourse forum.
 
+## Version 1.1.0 - Security Updates
+
+**🔒 Major Security Improvements:**
+
+- **Fixed signature mismatch issues** - Updated to omniauth-telegram 0.2.1 with critical security fixes
+- **Enhanced validation** - Added comprehensive signature verification
+- **Improved error handling** - Better debugging and error reporting
+- **Session security** - Automatic expiration of authentication data after 24 hours
+
 ## Features
 
 - 🔐 Secure OAuth authentication via Telegram
-- 🌐 Multi-language support (English, Russian)
+- 🌐 Multi-language support (English, Russian)  
 - 👥 Account linking for existing users
 - 📱 Mobile-friendly Telegram widget
 - 🛡️ Enhanced security with CSRF protection
+- 🔍 Debug mode for troubleshooting authentication issues
 
 ## Installation
 
@@ -83,3 +93,37 @@ This project is licensed under the AGPL-3.0 License - see the [LICENSE](LICENSE)
 For issues and questions:
 - [GitHub Issues](https://github.com/mjsir911/discourse-telegram-auth/issues)
 - [Discourse Meta](https://meta.discourse.org)
+
+## Troubleshooting
+
+### Signature Mismatch Error
+
+If you encounter "signature mismatch" errors:
+
+1. **Check your bot token** - Ensure it's correctly formatted (123456789:ABCdefGHIjklMNOpqrsTUVwxyz)
+2. **Verify domain binding** - Send `/setdomain` command to @BotFather with your exact domain
+3. **Enable debug mode** - Set `telegram_auth_debug` to `true` in admin settings
+4. **Check logs** - Look for TelegramAuth entries in your Rails logs
+
+### Common Issues
+
+- **Invalid bot token format** - Must match regex: `^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$`
+- **Domain not linked** - Bot must be linked to your domain via @BotFather
+- **Old authentication data** - Sessions expire after 24 hours
+- **Missing required fields** - Check that Telegram returns id and auth_date
+
+### Debug Mode
+
+Enable detailed logging by setting:
+
+```yaml
+telegram_auth_debug: true
+```
+
+This will log:
+- Data check strings
+- Hash comparisons  
+- Authentication flow details
+- Error stack traces
+
+For more details, see [SIGNATURE_MISMATCH_FIX.md](SIGNATURE_MISMATCH_FIX.md)

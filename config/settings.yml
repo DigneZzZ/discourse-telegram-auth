@@ -11,3 +11,7 @@ plugins:
     default: ''
     regex: "^[0-9]{8,10}:[a-zA-Z0-9_-]{35}$"
     secret: true
+  telegram_auth_debug:
+    default: false
+    client: false
+    hidden: true
