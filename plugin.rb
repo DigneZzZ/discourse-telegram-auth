@@ -2,10 +2,10 @@
 
 # name: discourse-telegram-auth
 # about: Enable Login via Telegram
-# version: 1.1.8
+# version: 1.1.9
 # authors: Marco Sirabella
 # url: https://github.com/mjsir911/discourse-telegram-auth
-# Fixed: Content Security Policy strict-dynamic compatibility issues, all syntax errors, and Rails 7.2+ middleware compatibility
+# Fixed: Content Security Policy strict-dynamic compatibility issues, all syntax errors, Rails 7.2+ middleware compatibility and frozen middleware stack
 
 gem 'omniauth-telegram', '0.2.1', require: false
 
@@ -291,40 +291,31 @@ end
 auth_provider authenticator: ::TelegramAuthenticator.new,
               icon: "fab-telegram"
 
+# Регистрируем middleware для обработки CSP на Telegram страницах
+# Делаем это ДО after_initialize, чтобы избежать ошибок с замороженным стеком middleware
+class ::TelegramCSPMiddleware
+  def initialize(app)
+    @app = app
+  end
+  
+  def call(env)
+    if env['PATH_INFO'] == '/auth/telegram' || env['PATH_INFO'].start_with?('/auth/telegram')
+      # Временно отключаем CSP для Telegram страниц
+      env['action_dispatch.content_security_policy'] = nil
+      env['action_dispatch.content_security_policy_report_only'] = nil
+    end
+    @app.call(env)
+  end
+end
+
+# Регистрируем middleware в более раннюю фазу инициализации
+# В Rails 7.2+ это должно быть сделано до заморозки стека middleware
+Rails.application.config.middleware.insert_after ActionDispatch::Flash, TelegramCSPMiddleware
+
 # Добавляем обработчик для reconnect параметра
-after_initialize do  # Регистрируем переводы для русского интерфейса
+after_initialize do
+  # Регистрируем переводы для русского интерфейса
   ::TelegramAuthenticator.register_translations
-  
-  # Добавляем middleware для обработки CSP на Telegram страницах
-  # Используем более современный подход, совместимый с Rails 7.2+
-  class TelegramCSPMiddleware
-    def initialize(app)
-      @app = app
-    end
-    
-    def call(env)
-      if env['PATH_INFO'] == '/auth/telegram' || env['PATH_INFO'].start_with?('/auth/telegram')
-        # Временно отключаем CSP для Telegram страниц
-        env['action_dispatch.content_security_policy'] = nil
-        env['action_dispatch.content_security_policy_report_only'] = nil
-      end
-      @app.call(env)
-    end
-  end
-  
-  # Безопасная вставка middleware с проверкой совместимости
-  begin
-    if defined?(ActionDispatch::ContentSecurityPolicy::Middleware)
-      Rails.application.config.middleware.insert_before ActionDispatch::ContentSecurityPolicy::Middleware, TelegramCSPMiddleware
-    else
-      # Альтернативный подход для новых версий Rails
-      Rails.application.config.middleware.use TelegramCSPMiddleware
-    end
-  rescue => e
-    Rails.logger.warn("TelegramAuth: Could not register CSP middleware: #{e.message}")
-    # Fallback - просто добавляем middleware в конец стека
-    Rails.application.config.middleware.use TelegramCSPMiddleware
-  end
   
   # Добавляем роуты для обработки Telegram OAuth
   Discourse::Application.routes.append do
