@@ -28,10 +28,11 @@ class ::TelegramAuthenticator < ::Auth::ManagedAuthenticator
   def can_revoke?
     true
   end
-
   def can_connect_existing_user?
     true
-  end  def register_middleware(omniauth)
+  end
+
+  def register_middleware(omniauth)
     omniauth.provider :telegram,
            setup: lambda { |env|
              strategy = env["omniauth.strategy"]

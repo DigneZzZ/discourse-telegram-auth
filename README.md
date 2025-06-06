@@ -2,14 +2,20 @@
 
 This plugin adds support for logging in via Telegram to your Discourse forum.
 
-## Version 1.1.0 - Security Updates
+## Version 1.1.1 - Enhanced Stability
 
-**🔒 Major Security Improvements:**
+**🚀 Latest Improvements:**
 
-- **Fixed signature mismatch issues** - Updated to omniauth-telegram 0.2.1 with critical security fixes
-- **Enhanced validation** - Added comprehensive signature verification
-- **Improved error handling** - Better debugging and error reporting
+- **Fixed hanging authentication pages** - Resolved issues with reconnect parameter
+- **Enhanced diagnostics** - Added comprehensive troubleshooting tools
+- **Improved error handling** - Better debugging and error reporting  
 - **Session security** - Automatic expiration of authentication data after 24 hours
+- **Complete documentation** - Step-by-step guides for common issues
+
+**🔒 Security Features:**
+- Fixed signature mismatch issues with omniauth-telegram 0.2.1
+- Enhanced validation with comprehensive signature verification
+- Improved authentication flow with proper error handling
 
 ## Features
 
@@ -127,3 +133,13 @@ This will log:
 - Error stack traces
 
 For more details, see [SIGNATURE_MISMATCH_FIX.md](SIGNATURE_MISMATCH_FIX.md)
+
+## 🆘 Having Issues?
+
+**Page hanging or not working?** → [CHECKLIST.md](CHECKLIST.md) - Step-by-step solution
+
+**Quick fixes needed?** → [QUICK_FIX.md](QUICK_FIX.md) - Common problems and solutions
+
+**Technical troubleshooting?** → [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Detailed diagnostics
+
+**Signature mismatch errors?** → [SIGNATURE_MISMATCH_FIX.md](SIGNATURE_MISMATCH_FIX.md) - Security fixes
